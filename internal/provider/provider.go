@@ -2,35 +2,46 @@ package provider
 
 import (
 	"context"
+	"net/url"
 
+	cleanhttp "github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/innovationnorway/go-seq"
 )
 
 func init() {
-	// Set descriptions to support markdown syntax, this will be used in document generation
-	// and the language server.
 	schema.DescriptionKind = schema.StringMarkdown
-
-	// Customize the content of descriptions when output. For example you can add defaults on
-	// to the exported descriptions if present.
-	// schema.SchemaDescriptionBuilder = func(s *schema.Schema) string {
-	// 	desc := s.Description
-	// 	if s.Default != nil {
-	// 		desc += fmt.Sprintf(" Defaults to `%v`.", s.Default)
-	// 	}
-	// 	return strings.TrimSpace(desc)
-	// }
 }
 
 func New(version string) func() *schema.Provider {
 	return func() *schema.Provider {
 		p := &schema.Provider{
+			Schema: map[string]*schema.Schema{
+				"server_url": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("SEQ_SERVER_URL", nil),
+					Description: "The HTTP endpoint address of the Seq server. This can also be set with the `SEQ_SERVER_URL` environment variable.",
+				},
+				"api_key": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					DefaultFunc: schema.EnvDefaultFunc("SEQ_API_KEY", nil),
+					Description: "The API Key to use when connecting to Seq. This can also be set with the `SEQ_API_KEY` environment variable.",
+				},
+			},
 			DataSourcesMap: map[string]*schema.Resource{
-				"scaffolding_data_source": dataSourceScaffolding(),
+				// TODO: add data sources
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"scaffolding_resource": resourceScaffolding(),
+				"seq_admin_user": resourceAdminUser(),
+				"seq_api_key":    resourceAPIKey(),
+				"seq_license":    resourceLicense(),
+				"seq_settings":   resourceSettings(),
+				"seq_user":       resourceUser(),
 			},
 		}
 
@@ -41,17 +52,38 @@ func New(version string) func() *schema.Provider {
 }
 
 type apiClient struct {
-	// Add whatever fields, client or connection info, etc. here
-	// you would need to setup to communicate with the upstream
-	// API.
+	client *seq.APIClient
+	auth   context.Context
 }
 
 func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-		// Setup a User-Agent for your API client (replace the provider name for yours):
-		// userAgent := p.UserAgent("terraform-provider-scaffolding", version)
-		// TODO: myClient.UserAgent = userAgent
+	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+		u, err := url.Parse(d.Get("server_url").(string))
+		if err != nil {
+			return nil, diag.Errorf("error parsing host: %s", err)
+		}
 
-		return &apiClient{}, nil
+		config := seq.NewConfiguration()
+		config.UserAgent = p.UserAgent("terraform-provider-seq", version)
+		config.HTTPClient = cleanhttp.DefaultClient()
+		config.HTTPClient.Transport = logging.NewTransport("Seq", config.HTTPClient.Transport)
+		config.Host = u.Host
+		config.Scheme = u.Scheme
+
+		client := seq.NewAPIClient(config)
+		auth := context.WithValue(
+			context.Background(),
+			seq.ContextAPIKeys,
+			map[string]seq.APIKey{
+				"ApiKeyAuth": {
+					Key: d.Get("api_key").(string),
+				},
+			},
+		)
+
+		return &apiClient{
+			client: client,
+			auth:   auth,
+		}, nil
 	}
 }
