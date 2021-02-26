@@ -3,8 +3,9 @@ package provider
 import (
 	"context"
 	"net/url"
+	"time"
 
-	cleanhttp "github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/logging"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -31,6 +32,24 @@ func New(version string) func() *schema.Provider {
 					Sensitive:   true,
 					DefaultFunc: schema.EnvDefaultFunc("SEQ_API_KEY", nil),
 					Description: "The API Key to use when connecting to Seq. This can also be set with the `SEQ_API_KEY` environment variable.",
+				},
+				"retry_max": {
+					Type:        schema.TypeInt,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("SEQ_HTTP_RETRY_MAX", 4),
+					Description: "The number of HTTP request retries.",
+				},
+				"retry_wait_min": {
+					Type:        schema.TypeInt,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("SEQ_HTTP_RETRY_WAIT_MIN", 1),
+					Description: "The minimum time in seconds to wait between HTTP request attempts.",
+				},
+				"retry_wait_max": {
+					Type:        schema.TypeInt,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("SEQ_HTTP_RETRY_WAIT_MAX", 30),
+					Description: "The maximum time in seconds to wait between HTTP request attempts.",
 				},
 			},
 			DataSourcesMap: map[string]*schema.Resource{
@@ -63,9 +82,15 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 			return nil, diag.Errorf("error parsing host: %s", err)
 		}
 
+		r := retryablehttp.NewClient()
+		r.RetryMax = d.Get("retry_max").(int)
+		r.RetryWaitMin = time.Duration(d.Get("retry_wait_min").(int)) * time.Second
+		r.RetryWaitMax = time.Duration(d.Get("retry_wait_max").(int)) * time.Second
+		r.Logger = nil
+
 		config := seq.NewConfiguration()
 		config.UserAgent = p.UserAgent("terraform-provider-seq", version)
-		config.HTTPClient = cleanhttp.DefaultClient()
+		config.HTTPClient = r.StandardClient()
 		config.HTTPClient.Transport = logging.NewTransport("Seq", config.HTTPClient.Transport)
 		config.Host = u.Host
 		config.Scheme = u.Scheme
