@@ -34,4 +34,7 @@ provider "seq" {
 ### Optional
 
 - **api_key** (String, Sensitive) The API Key to use when connecting to Seq. This can also be set with the `SEQ_API_KEY` environment variable.
+- **retry_max** (Number) The number of HTTP request retries.
+- **retry_wait_max** (Number) The maximum time in seconds to wait between HTTP request attempts.
+- **retry_wait_min** (Number) The minimum time in seconds to wait between HTTP request attempts.
 - **server_url** (String) The HTTP endpoint address of the Seq server. This can also be set with the `SEQ_SERVER_URL` environment variable.
