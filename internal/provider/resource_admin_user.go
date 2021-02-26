@@ -28,7 +28,7 @@ func resourceAdminUser() *schema.Resource {
 			"password": {
 				Description:      "The password for the admin user.",
 				Type:             schema.TypeString,
-				Required:         true,
+				Optional:         true,
 				Sensitive:        true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 			},
@@ -58,9 +58,13 @@ func resourceAdminUserCreate(ctx context.Context, d *schema.ResourceData, meta i
 	id := "user-admin"
 
 	user := seq.User{
-		Id:          seq.PtrString(id),
-		Username:    d.Get("username").(string),
-		NewPassword: seq.PtrString(d.Get("password").(string)),
+		Id:       seq.PtrString(id),
+		Username: d.Get("username").(string),
+		RoleIds:  &[]string{"role-administrator"},
+	}
+
+	if v, ok := d.GetOk("password"); ok {
+		user.NewPassword = seq.PtrString(v.(string))
 	}
 
 	if v, ok := d.GetOk("display_name"); ok {
@@ -109,6 +113,7 @@ func resourceAdminUserUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	user := seq.User{
 		Id:       seq.PtrString(d.Id()),
 		Username: d.Get("username").(string),
+		RoleIds:  &[]string{"role-administrator"},
 	}
 
 	if d.HasChange("password") {

@@ -675,11 +675,11 @@ func resourceSettingsCreate(ctx context.Context, d *schema.ResourceData, meta in
 	if v, ok := d.GetOk("is_authentication_enabled"); ok {
 		id := "setting-isauthenticationenabled"
 		name := "isauthenticationenabled"
-		setting := seq.AutomaticAccessADGroupAsSetting(
-			&seq.AutomaticAccessADGroup{
+		setting := seq.IsAuthenticationEnabledAsSetting(
+			&seq.IsAuthenticationEnabled{
 				Id:    id,
 				Name:  name,
-				Value: seq.PtrString(v.(string)),
+				Value: seq.PtrBool(v.(bool)),
 			},
 		)
 		_, resp, err := client.SettingsApi.UpdateSetting(auth, id).Setting(setting).Execute()
