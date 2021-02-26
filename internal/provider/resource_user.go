@@ -28,7 +28,7 @@ func resourceUser() *schema.Resource {
 			"password": {
 				Description:      "The password for the user.",
 				Type:             schema.TypeString,
-				Required:         true,
+				Optional:         true,
 				Sensitive:        true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 			},
@@ -64,8 +64,11 @@ func resourceUserCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	auth := meta.(*apiClient).auth
 
 	user := seq.User{
-		Username:    d.Get("username").(string),
-		NewPassword: seq.PtrString(d.Get("password").(string)),
+		Username: d.Get("username").(string),
+	}
+
+	if v, ok := d.GetOk("password"); ok {
+		user.NewPassword = seq.PtrString(v.(string))
 	}
 
 	if v, ok := d.GetOk("display_name"); ok {
