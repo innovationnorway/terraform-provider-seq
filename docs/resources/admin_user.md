@@ -26,7 +26,6 @@ resource "seq_admin_user" "example" {
 
 ### Required
 
-- **password** (String, Sensitive) The password for the admin user.
 - **username** (String) The username that uniquely identifies the admin user.
 
 ### Optional
@@ -35,5 +34,6 @@ resource "seq_admin_user" "example" {
 - **email_address** (String) The admin user's email address.
 - **id** (String) The ID of this resource.
 - **must_change_password** (Boolean) If `true`, the admin user will be unable to log in without first changing their password.
+- **password** (String, Sensitive) The password for the admin user.
 
 

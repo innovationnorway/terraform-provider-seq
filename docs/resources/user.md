@@ -30,7 +30,6 @@ resource "seq_user" "example" {
 
 ### Required
 
-- **password** (String, Sensitive) The password for the user.
 - **username** (String) The username that uniquely identifies the user.
 
 ### Optional
@@ -39,6 +38,7 @@ resource "seq_user" "example" {
 - **email_address** (String) The user's email address. This will be used to show a Gravatar for the user in some situations.
 - **id** (String) The ID of this resource.
 - **must_change_password** (Boolean) If `true`, the user will be unable to log in without first changing their password. Recommended when administratively assigning a password for the user.
+- **password** (String, Sensitive) The password for the user.
 - **role_ids** (List of String) The ids of one or more roles that grant permissions to the user. Possible values are `role-administrator` (Administrator), `role-ro` (User, read-only), `role-rw` (User, read/write) and `role-user` (User, read/write/ingest)`.
 
 
