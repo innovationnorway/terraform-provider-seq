@@ -824,15 +824,6 @@ func resourceSettingsRead(ctx context.Context, d *schema.ResourceData, meta inte
 		d.Set("azuread_client_id", r.AzureADClientId.GetValue())
 	}
 
-	if _, ok := d.GetOk("azuread_client_key"); ok {
-		id := "setting-azureadclientkey"
-		r, resp, err := client.SettingsApi.GetSetting(auth, id).Execute()
-		if err != nil {
-			return diag.Errorf("error getting setting (ID: %s): %s: %s", id, err, resp.Body)
-		}
-		d.Set("azuread_client_key", r.AzureADClientKey.GetValue())
-	}
-
 	if _, ok := d.GetOk("backup_location"); ok {
 		id := "setting-backuplocation"
 		r, resp, err := client.SettingsApi.GetSetting(auth, id).Execute()

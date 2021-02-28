@@ -51,6 +51,25 @@ func TestAccResourceSettings_InstanceTitle(t *testing.T) {
 	})
 }
 
+func TestAccResourceSettings_AzureAD(t *testing.T) {
+	resource.UnitTest(t, resource.TestCase{
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      testAccCheckSettingDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceSettingsAzureAD,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("seq_settings.test", "authentication_provider", "Azure Active Directory"),
+					resource.TestCheckResourceAttr("seq_settings.test", "azuread_client_id", "5601721f-555b-45d9-a9c7-5cd2c60a7148"),
+					resource.TestCheckResourceAttr("seq_settings.test", "azuread_tenant_id", "e7d03e04-2ccf-493c-9c89-83a395e96260"),
+					resource.TestCheckResourceAttr("seq_settings.test", "is_authentication_enabled", "true"),
+				),
+			},
+		},
+	})
+}
+
 func testAccCheckSettingDestroy(s *terraform.State) error {
 	// TODO: add CheckDestroy
 	return nil
@@ -73,3 +92,31 @@ resource "seq_settings" "test" {
 }
 `, instanceTitle)
 }
+
+//lintignore:AT004
+const testAccResourceSettingsAzureAD = `
+provider "seq" {
+  api_key = "Gaz48ULsNjlzfvfQMTln"
+}
+
+resource "seq_api_key" "test" {
+  title = "test"
+  token = "Gaz48ULsNjlzfvfQMTln"
+  assigned_permissions = [
+    "Read",
+    "Write",
+    "Setup",
+  ]
+}
+
+resource "seq_settings" "test" {
+  authentication_provider   = "Azure Active Directory"
+  azuread_client_id         = "5601721f-555b-45d9-a9c7-5cd2c60a7148"
+  azuread_tenant_id         = "e7d03e04-2ccf-493c-9c89-83a395e96260"
+  azuread_client_key        = "7HKzxCKPAGdR4Zzsbu5jKEzD9PU7tpGv"
+  is_authentication_enabled = true
+  depends_on = [
+    seq_api_key.test,
+  ]
+}
+`
