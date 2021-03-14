@@ -25,6 +25,12 @@ func resourceLicense() *schema.Resource {
 				Required:         true,
 				ValidateDiagFunc: validation.ToDiagFunc(validation.StringIsNotEmpty),
 			},
+			"automatically_refresh": {
+				Description: "If the license is for a subscription, automatically check datalust.co and update the license when the subscription is renewed or tier changed.",
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Computed:    true,
+			},
 			"status_description": {
 				Description: "Information about the status of the license.",
 				Type:        schema.TypeString,
@@ -38,11 +44,6 @@ func resourceLicense() *schema.Resource {
 			"subscription_id": {
 				Description: "If the license is a subscription, the subscription id.",
 				Type:        schema.TypeString,
-				Computed:    true,
-			},
-			"automatically_refresh": {
-				Description: "If the license is for a subscription, automatically check datalust.co and update the license when the subscription is renewed or tier changed.",
-				Type:        schema.TypeBool,
 				Computed:    true,
 			},
 			"can_renew_online_now": {
@@ -78,6 +79,10 @@ func resourceLicenseCreateUpdate(ctx context.Context, d *schema.ResourceData, me
 	license := seq.License{
 		Id:          seq.PtrString(id),
 		LicenseText: d.Get("license_text").(string),
+	}
+
+	if v, ok := d.GetOk("automatically_refresh"); ok {
+		license.AutomaticallyRefresh = seq.PtrBool(v.(bool))
 	}
 
 	r, resp, err := client.LicensesApi.UpdateLicense(auth, id).License(license).Execute()
