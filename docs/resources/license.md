@@ -27,11 +27,11 @@ resource "seq_license" "example" {
 
 ### Optional
 
+- **automatically_refresh** (Boolean) If the license is for a subscription, automatically check datalust.co and update the license when the subscription is renewed or tier changed.
 - **id** (String) The ID of this resource.
 
 ### Read-Only
 
-- **automatically_refresh** (Boolean) If the license is for a subscription, automatically check datalust.co and update the license when the subscription is renewed or tier changed.
 - **can_renew_online_now** (Boolean) If `true`, the license can be renewed online.
 - **is_single_user** (Boolean) If `true`, the server is using the default license which allows a single person to access the Seq server.
 - **is_valid** (Boolean) Whether or not the license is valid for the server.
